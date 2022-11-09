@@ -6,6 +6,9 @@ package cmd
 import (
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -24,7 +27,7 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		parse("templates", "out")
+		scanAndParse("templates", "out")
 	},
 }
 
@@ -49,20 +52,55 @@ func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func parse(path string, outPath string) {
-	t, err := template.ParseGlob("templates/*")
+var wg sync.WaitGroup
+
+func scanAndParse(basePath string, outPath string) {
+
+	// A sample config
+	config := map[string]string{ // TODO: switch to actual config
+		"textColor":      "#abcdef",
+		"linkColorHover": "#ffaacc",
+	}
+
+	filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error { // TODO: check return errors
+		log.Println(path)
+		if !info.IsDir() {
+			log.Println("^ is a file")
+			wg.Add(1)
+			go parse(path, config, basePath, outPath)
+		}
+
+		return nil
+	})
+
+	wg.Wait()
+}
+
+func parse(path string, config map[string]string, basePath string, outPath string) { // function too big: refactor
+	defer wg.Done()
+
+	t, err := template.ParseFiles(path)
 	if err != nil {
 		log.Print(err)
 		return
 	}
 
-	// A sample config
-	config := map[string]string{
-		"textColor":      "#abcdef",
-		"linkColorHover": "#ffaacc",
+	writePath := strings.Replace(path, basePath, outPath, 1)
+
+	err = os.MkdirAll(filepath.Dir(writePath), os.ModePerm)
+	if err != nil {
+		log.Println("create directory: ", err)
+		return
 	}
 
-	err = t.Execute(os.Stdout, config)
+	f, err := os.Create(writePath)
+	if err != nil {
+		log.Println("create file: ", err)
+		return
+	}
+
+	err = t.Execute(f, config)
+
 	if err != nil {
 		log.Print("execute: ", err)
 		return
