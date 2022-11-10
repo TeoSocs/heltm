@@ -11,6 +11,7 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/Masterminds/sprig"
 	"github.com/spf13/cobra"
 
 	"github.com/magiconair/properties"
@@ -58,12 +59,6 @@ var wg sync.WaitGroup
 
 func scanAndParse(basePath string, outPath string) {
 
-	// A sample config
-	// config := map[string]string{ // TODO: switch to actual config
-	// 	"textColor":      "#abcdef",
-	// 	"linkColorHover": "#ffaacc",
-	// }
-
 	config := properties.MustLoadFile("values.properties", properties.UTF8)
 
 	filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error { // TODO: check return errors
@@ -83,15 +78,16 @@ func scanAndParse(basePath string, outPath string) {
 func parse(path string, config map[string]string, basePath string, outPath string) {
 	defer wg.Done()
 
-	t, err := template.ParseFiles(path)
-	if err != nil {
-		log.Print(err)
-		return
-	}
+	t := template.Must(template.New(filepath.Base(path)).Funcs(sprig.FuncMap()).ParseFiles(path))
+	// t, err := template.ParseFiles(path)
+	// if err != nil {
+	// 	log.Print(err)
+	// 	return
+	// }
 
 	writePath := strings.Replace(path, basePath, outPath, 1)
 
-	err = os.MkdirAll(filepath.Dir(writePath), os.ModePerm)
+	err := os.MkdirAll(filepath.Dir(writePath), os.ModePerm)
 	if err != nil {
 		log.Println("create directory: ", err)
 		return
