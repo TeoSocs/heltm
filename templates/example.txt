@@ -1,1 +1,1 @@
-"The text color is {{.textColor}} and the link color is {{.linkColorHover}}"
+Two children struct: {{ .complexStruct.childOne }} and {{ .complexStruct.childTwo }}

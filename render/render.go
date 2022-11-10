@@ -9,20 +9,30 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-	"github.com/magiconair/properties"
+	"gopkg.in/yaml.v3"
 )
 
 var wg sync.WaitGroup
 
 var ConcurrencyEnabled = true
 
-func ProcessTemplatesIn(basePath string, outPath string, props string) {
+func mustReadYamlFile(path string) map[string]interface{} {
+	valueMap := make(map[string]interface{})
+	f, err := os.ReadFile(path)
+	if err != nil {
+		log.Fatalln("error reading file:", err)
+	}
+	yaml.Unmarshal(f, &valueMap)
+	return valueMap
+}
+
+func ProcessTemplatesIn(basePath string, outPath string, valuesPath string) {
 
 	if !ConcurrencyEnabled {
 		log.Println("Warning: the concurrent rendering of template is disabled, the ETA will be longer")
 	}
 
-	config := properties.MustLoadFile(props, properties.UTF8)
+	config := mustReadYamlFile(valuesPath)
 
 	filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error { // TODO: check return errors
 		if info.IsDir() {
@@ -31,9 +41,9 @@ func ProcessTemplatesIn(basePath string, outPath string, props string) {
 			log.Println("processing", path)
 			wg.Add(1)
 			if ConcurrencyEnabled {
-				go render(path, config.Map(), basePath, outPath)
+				go render(path, config, basePath, outPath)
 			} else {
-				render(path, config.Map(), basePath, outPath)
+				render(path, config, basePath, outPath)
 			}
 		}
 
@@ -43,7 +53,7 @@ func ProcessTemplatesIn(basePath string, outPath string, props string) {
 	wg.Wait()
 }
 
-func render(path string, config map[string]string, basePath string, outPath string) {
+func render(path string, config map[string]interface{}, basePath string, outPath string) {
 	defer wg.Done()
 
 	t := template.Must(template.New(filepath.Base(path)).Funcs(sprig.FuncMap()).ParseFiles(path))

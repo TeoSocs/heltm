@@ -1,0 +1,5 @@
+textColor: "#abcdef"
+linkColorHover: "#ffaacc"
+complexStruct:
+    childOne: "one"
+    childTwo: "two"

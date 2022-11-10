@@ -16,7 +16,7 @@ var valuesParam = "values"
 
 var defaultFrom = "templates"
 var defaultOut = "out"
-var defaultProps = "values.properties"
+var defaultValues = "values.yaml"
 
 // renderCmd represents the render command
 var renderCmd = &cobra.Command{
@@ -32,7 +32,7 @@ Any rendered file will maintain the same name and path relative to the output
 folder.
 
 The expected format is the go template format, with the functions from Sprig.
-No validation is performed over the output files.`, defaultFrom, defaultOut, defaultProps),
+No validation is performed over the output files.`, defaultFrom, defaultOut, defaultValues),
 	Run: func(cmd *cobra.Command, args []string) {
 		c, _ := cmd.Flags().GetBool(disableConcurrencyParam)
 		if c {
@@ -59,5 +59,5 @@ func init() {
 	// renderCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	renderCmd.Flags().StringP(fromParam, "f", defaultFrom, "Templates directory")
 	renderCmd.Flags().StringP(outputParam, "o", defaultOut, "Output directory")
-	renderCmd.Flags().StringP(valuesParam, "p", defaultProps, "Template values file")
+	renderCmd.Flags().StringP(valuesParam, "p", defaultValues, "Template values file")
 }

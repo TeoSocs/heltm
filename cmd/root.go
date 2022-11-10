@@ -23,10 +23,9 @@ The tool makes heavy use of goroutines, a parameter is provided to disable the
 concurrency if needed.
 
 REFERENCE DOCUMENTATION:
-Golang template language:	https://pkg.go.dev/text/template
-Sprig template functions:	https://pkg.go.dev/github.com/Masterminds/sprig
-Properties file syntax:		https://pkg.go.dev/github.com/magiconair/properties
-Heltm repository:			https://github.com/TeoSocs/heltm
+Golang template language:   https://pkg.go.dev/text/template
+Sprig template functions:   https://pkg.go.dev/github.com/Masterminds/sprig
+Heltm repository:           https://github.com/TeoSocs/heltm
 `,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
