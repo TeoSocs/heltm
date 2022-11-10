@@ -1,37 +1,36 @@
 /*
-Copyright © 2022 NAME HERE matteo.sovilla@infocamere.it
+Copyright © 2022 MATTEO SOVILLA teo.sovi@gmail.com
 */
 package cmd
 
 import (
-	"log"
 	"os"
-	"path/filepath"
-	"strings"
-	"sync"
-	"text/template"
 
-	"github.com/Masterminds/sprig"
 	"github.com/spf13/cobra"
-
-	"github.com/magiconair/properties"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "heltm",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Short: "a go template engine based on Helm",
+	Long: `A command line utility to locally render multiple template files using the go
+template language and the functions provided by Sprig library.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+No validation is performed over the output files, thus making the tool agnostic
+respect to the intended use of the templated files.
+
+The tool makes heavy use of goroutines, a parameter is provided to disable the
+concurrency if needed.
+
+REFERENCE DOCUMENTATION:
+Golang template language:	https://pkg.go.dev/text/template
+Sprig template functions:	https://pkg.go.dev/github.com/Masterminds/sprig
+Properties file syntax:		https://pkg.go.dev/github.com/magiconair/properties
+Heltm repository:			https://github.com/TeoSocs/heltm
+`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	Run: func(cmd *cobra.Command, args []string) {
-		scanAndParse("templates", "out")
-	},
+	// Run: func(cmd *cobra.Command, args []string) {},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -43,66 +42,17 @@ func Execute() {
 	}
 }
 
+var disableConcurrencyParam = "non-parallel"
+
 func init() {
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.heltm.yaml)")
+	rootCmd.PersistentFlags().BoolP(disableConcurrencyParam, "", false, "Force non-parallel execution")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-var wg sync.WaitGroup
-
-func scanAndParse(basePath string, outPath string) {
-
-	config := properties.MustLoadFile("values.properties", properties.UTF8)
-
-	filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error { // TODO: check return errors
-		log.Println(path)
-		if !info.IsDir() {
-			log.Println("^ is a file")
-			wg.Add(1)
-			go parse(path, config.Map(), basePath, outPath)
-		}
-
-		return nil
-	})
-
-	wg.Wait()
-}
-
-func parse(path string, config map[string]string, basePath string, outPath string) {
-	defer wg.Done()
-
-	t := template.Must(template.New(filepath.Base(path)).Funcs(sprig.FuncMap()).ParseFiles(path))
-	// t, err := template.ParseFiles(path)
-	// if err != nil {
-	// 	log.Print(err)
-	// 	return
-	// }
-
-	writePath := strings.Replace(path, basePath, outPath, 1)
-
-	err := os.MkdirAll(filepath.Dir(writePath), os.ModePerm)
-	if err != nil {
-		log.Println("create directory: ", err)
-		return
-	}
-
-	f, err := os.Create(writePath)
-	if err != nil {
-		log.Println("create file: ", err)
-		return
-	}
-
-	err = t.Execute(f, config)
-
-	if err != nil {
-		log.Print("execute: ", err)
-		return
-	}
+	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
