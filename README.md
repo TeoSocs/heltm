@@ -10,3 +10,6 @@ https://blog.logrocket.com/using-golang-templates/
 
 ## Template functions for Go templates
 https://pkg.go.dev/github.com/Masterminds/sprig#section-readme
+
+## Read properties
+https://pkg.go.dev/github.com/magiconair/properties

@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
+Copyright © 2022 NAME HERE matteo.sovilla@infocamere.it
 */
 package cmd
 
@@ -12,6 +12,8 @@ import (
 	"text/template"
 
 	"github.com/spf13/cobra"
+
+	"github.com/magiconair/properties"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -57,17 +59,19 @@ var wg sync.WaitGroup
 func scanAndParse(basePath string, outPath string) {
 
 	// A sample config
-	config := map[string]string{ // TODO: switch to actual config
-		"textColor":      "#abcdef",
-		"linkColorHover": "#ffaacc",
-	}
+	// config := map[string]string{ // TODO: switch to actual config
+	// 	"textColor":      "#abcdef",
+	// 	"linkColorHover": "#ffaacc",
+	// }
+
+	config := properties.MustLoadFile("values.properties", properties.UTF8)
 
 	filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error { // TODO: check return errors
 		log.Println(path)
 		if !info.IsDir() {
 			log.Println("^ is a file")
 			wg.Add(1)
-			go parse(path, config, basePath, outPath)
+			go parse(path, config.Map(), basePath, outPath)
 		}
 
 		return nil
@@ -76,7 +80,7 @@ func scanAndParse(basePath string, outPath string) {
 	wg.Wait()
 }
 
-func parse(path string, config map[string]string, basePath string, outPath string) { // function too big: refactor
+func parse(path string, config map[string]string, basePath string, outPath string) {
 	defer wg.Done()
 
 	t, err := template.ParseFiles(path)
