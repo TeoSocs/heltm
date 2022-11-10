@@ -22,7 +22,10 @@ func mustReadYamlFile(path string) map[string]interface{} {
 	if err != nil {
 		log.Fatalln("error reading file:", err)
 	}
-	yaml.Unmarshal(f, &valueMap)
+	err = yaml.Unmarshal(f, &valueMap)
+	if err != nil {
+		log.Fatalln("error unmarshaling yaml:", err)
+	}
 	return valueMap
 }
 
@@ -34,7 +37,7 @@ func ProcessTemplatesIn(basePath string, outPath string, valuesPath string) {
 
 	config := mustReadYamlFile(valuesPath)
 
-	filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error { // TODO: check return errors
+	processNode := func(path string, info os.FileInfo, err error) error { // ignored errors in render function: I want the script to continue anyway
 		if info.IsDir() {
 			log.Println("  scanning", path)
 		} else {
@@ -46,21 +49,22 @@ func ProcessTemplatesIn(basePath string, outPath string, valuesPath string) {
 				render(path, config, basePath, outPath)
 			}
 		}
-
 		return nil
-	})
+	}
+
+	filepath.Walk(basePath, processNode)
 
 	wg.Wait()
 }
 
-func render(path string, config map[string]interface{}, basePath string, outPath string) {
+func render(path string, config map[string]interface{}, basePath string, outPath string) (err error) {
 	defer wg.Done()
 
 	t := template.Must(template.New(filepath.Base(path)).Funcs(sprig.FuncMap()).ParseFiles(path))
 
 	writePath := strings.Replace(path, basePath, outPath, 1)
 
-	err := os.MkdirAll(filepath.Dir(writePath), os.ModePerm)
+	err = os.MkdirAll(filepath.Dir(writePath), os.ModePerm)
 	if err != nil {
 		log.Println(path, " error creating directory: ", err)
 		return
@@ -78,4 +82,6 @@ func render(path string, config map[string]interface{}, basePath string, outPath
 		log.Println(path, " error executing: ", err)
 		return
 	}
+
+	return nil
 }
